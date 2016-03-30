@@ -56,10 +56,29 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
                             minSize:(double)minSize {
     // -- TASK 1A --
     double size, clippedSize;
-    Sample2D rescaledSamples[count];
+    Sample2D * rescaledSamples = (Sample2D *)calloc(sizeof(Sample2D), count);
     double minX = +INFINITY, maxX = -INFINITY, minY = +INFINITY, maxY = -INFINITY;
+    
+    for (int i = 0; i < count; i++) {
+        Sample2D sample = samples[i];
+        minX = MIN(sample.x, minX);
+        maxX = MAX(sample.x, maxX);
+        minY = MIN(sample.y, minY);
+        maxY = MAX(sample.y, maxY);
+    }
+    
     // Compute size, clippedSize
+    size = MAX(maxX - minX, maxY - minY);
+    clippedSize = MAX(size, minSize);
+    
     // Rescale points to lie in [0,1] x [0,1]
+    
+    for (int i = 0; i < count; i++) {
+        Sample2D sample = samples[i];
+        rescaledSamples[i].x = (sample.x - minX)/clippedSize;
+        rescaledSamples[i].y = (sample.y - minY)/clippedSize;
+        rescaledSamples[i].t = sample.t;
+    }
     
     // -- TASK 1B --
     double features[N_FEATURES] = {};
