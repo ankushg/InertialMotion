@@ -85,6 +85,46 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
     // Classify each point according to which zone of a 3x3 Tic-Tac-Toe board it would fall in
     // Compute the time spent in each zone and the distance traveled horizontally and vertically
     
+    for (int i = 0; i < count - 1; i++) {
+        Sample2D sample1 = rescaledSamples[i];
+        Sample2D sample2 = rescaledSamples[i+1];
+        
+        int zone = 0;
+        double zoneX = sample1.x;
+        double zoneY = sample1.y;
+        if (zoneX < 1/3.0) {
+            zone += 0;
+        } else if (zoneX > 2/3.0) {
+            zone += 2;
+        } else { // 1/3 < x < 2/3
+            zone += 1;
+        }
+        if (zoneY < 1/3.0) {
+            zone += 0;
+        } else if (zoneY > 2/3.0){
+            zone += 6;
+        } else { // 1/3 < y < 2/3
+            zone += 3;
+        }
+        
+        double xDiff = sample2.x - sample1.x;
+        double yDiff = sample2.y - sample1.y;
+        double tDiff = sample2.t - sample1.t;
+        
+        features[zone*3] += tDiff;
+        features[zone*3 + 1] += xDiff;
+        features[zone*3 + 2] += yDiff;
+    }
+    
+    // normalize the time features
+    double totalTime = rescaledSamples[count-1].t - rescaledSamples[0].t;
+    for (int i = 0; i < 9; i++) {
+        features[i*3] = features[i*3]/totalTime;
+    }
+    
+    features[27] = 1.0;
+    
+    
     // -- TASK 1C --
 #if TRAINING
     // Use this code if you want to do additional training
@@ -104,15 +144,26 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
     // The output of the training procedure goes at the top of GestureProcessor.m.
     
     // -- TASK 1E --
-    int best_label = N_LABELS;
-    double best_score = -INFINITY;
+    int bestLabel = N_LABELS;
+    double bestScore = -INFINITY;
+    
     // Dot product with gesture templates in weights[][]
+    for (int i = 0; i < N_LABELS; i++) {
+        double score = 0;
+        for (int j = 0; j <  N_FEATURES; j++) {
+            score += features[j] * weights[i][j];
+        }
+        if (score > bestScore) {
+            bestLabel = i;
+            bestScore = score;
+        }
+    }
     
 #if !TRAINING
     // Report strongest match
-    NSLog(@"Matched '%@' (score %+.5f)", labels[best_label], best_score);
+    NSLog(@"Matched '%@' (score %+.5f)", labels[bestLabel], bestScore);
 #endif
-    [self.delegate gestureProcessor:self didRecognizeGesture:labels[best_label]];
+    [self.delegate gestureProcessor:self didRecognizeGesture:labels[bestLabel]];
 }
 
 - (void)processGesture3DWithSamples:(const Sample3D *)samples
