@@ -85,6 +85,8 @@ static inline GLKVector3 GLKVector3FromCMAcceleration(CMAcceleration acceleratio
     // -- TASK 2A --
     GLKVector3 acceleration = userAcceleration;
     // rotate acceleration from instantaneous coordinates into persistent coordinates
+    acceleration = GLKQuaternionRotateVector3(attitude, acceleration);
+    acceleration = GLKVector3MultiplyScalar(acceleration, -1.0);
     
     // -- TASK 2B --
     // integrate acceleration into _velocity and _velocity into _position
