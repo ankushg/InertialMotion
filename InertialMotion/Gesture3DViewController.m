@@ -79,6 +79,8 @@ static inline GLKVector3 GLKVector3FromCMAcceleration(CMAcceleration acceleratio
 - (void)accumulateMotion:(CMDeviceMotion *)motion
 {
     double dt = _motionManager.deviceMotionUpdateInterval;
+    double alpha = 0.5;
+    
     GLKQuaternion attitude = GLKQuaternionFromCMQuaternion(motion.attitude.quaternion);
     GLKVector3 userAcceleration = GLKVector3FromCMAcceleration(motion.userAcceleration);
     
@@ -90,12 +92,13 @@ static inline GLKVector3 GLKVector3FromCMAcceleration(CMAcceleration acceleratio
     
     // -- TASK 2B --
     // integrate acceleration into _velocity and _velocity into _position
-    GLKVector3 vPrime = GLKVector3Add(_velocity, GLKVector3MultiplyScalar(acceleration, 0.5 * dt));
-    _position = GLKVector3Add(_position, vPrime);
-    _velocity = GLKVector3Add(vPrime, GLKVector3MultiplyScalar(acceleration, 0.5 * dt));
     
     // -- TASK 2C --
     // apply your choice of braking to _velocity and _position to stabilize the integration loop
+    
+    GLKVector3 vPrime = GLKVector3Add(GLKVector3MultiplyScalar(_velocity, exp(-0.5 * alpha * dt)), GLKVector3MultiplyScalar(acceleration, 0.5 * dt));
+    _position = GLKVector3Add(GLKVector3MultiplyScalar(_position, exp(-1 * alpha * dt)), vPrime);
+    _velocity = GLKVector3Add(GLKVector3MultiplyScalar(vPrime, exp(-0.5 * alpha * dt)), GLKVector3MultiplyScalar(acceleration, 0.5 * dt));
     
     // add the new data to the log
     [self appendPoint:_position attitude:attitude];
