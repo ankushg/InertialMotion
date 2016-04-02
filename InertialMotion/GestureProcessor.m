@@ -176,6 +176,11 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
     GLKMatrix3 M = {};
     // For each i, convert samples[i].attitude to a 3x3 matrix and sum it into M.
     // Then find the rotation matrix most similar to the resulting sum.
+    for(int i = 0; i < count; i++) {
+        GLKMatrix3 matrix = GLKMatrix3MakeWithQuaternion(samples[i].attitude);
+        M = GLKMatrix3Add(M, matrix);
+    }
+    M = NearestRotation(M);
     
     // -- TASK 3B --
     // Project points to 2D:
