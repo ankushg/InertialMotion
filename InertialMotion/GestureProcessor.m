@@ -189,7 +189,8 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
     // to samples2D[i].
     for(int i = 0; i < count; i++) {
         GLKVector3 projection = GLKMatrix3MultiplyVector3(M, samples[i].location);
-        samples2D[i] = Sample2DMake(projection.x, projection.y, samples[i].t);
+        Sample2D sample = {projection.x, projection.y, samples[i].t};
+        samples2D[i] = sample;
     }
     
     // Apply 2-D solution
