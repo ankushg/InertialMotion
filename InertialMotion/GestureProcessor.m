@@ -51,6 +51,28 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
 
 @implementation GestureProcessor
 
++ (int) getZoneFromSample:(const Sample2D) sample {
+    int zone = 0;
+    
+    if (sample.x < 1/3.0) {
+        zone += 0;
+    } else if (sample.x > 2/3.0) {
+        zone += 2;
+    } else { // 1/3 < x < 2/3
+        zone += 1;
+    }
+    
+    if (sample.y < 1/3.0) {
+        zone += 0;
+    } else if (sample.y > 2/3.0){
+        zone += 6;
+    } else { // 1/3 < y < 2/3
+        zone += 3;
+    }
+    
+    return zone;
+}
+
 - (void)processGesture2DWithSamples:(const Sample2D *)samples
                               count:(NSUInteger)count
                             minSize:(double)minSize {
@@ -72,7 +94,6 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
     clippedSize = MAX(size, minSize);
     
     // Rescale points to lie in [0,1] x [0,1]
-    
     for (int i = 0; i < count; i++) {
         Sample2D sample = samples[i];
         rescaledSamples[i].x = (sample.x - minX)/clippedSize;
@@ -84,46 +105,22 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
     double features[N_FEATURES] = {};
     // Classify each point according to which zone of a 3x3 Tic-Tac-Toe board it would fall in
     // Compute the time spent in each zone and the distance traveled horizontally and vertically
-    
+    double totalTime = rescaledSamples[count-1].t - rescaledSamples[0].t;
+
     for (int i = 0; i < count - 1; i++) {
         Sample2D sample1 = rescaledSamples[i];
         Sample2D sample2 = rescaledSamples[i+1];
         
-        int zone = 0;
-        double zoneX = sample1.x;
-        double zoneY = sample1.y;
-        if (zoneX < 1/3.0) {
-            zone += 0;
-        } else if (zoneX > 2/3.0) {
-            zone += 2;
-        } else { // 1/3 < x < 2/3
-            zone += 1;
-        }
-        if (zoneY < 1/3.0) {
-            zone += 0;
-        } else if (zoneY > 2/3.0){
-            zone += 6;
-        } else { // 1/3 < y < 2/3
-            zone += 3;
-        }
+        int zone = [GestureProcessor getZoneFromSample:sample1];
         
-        double xDiff = sample2.x - sample1.x;
-        double yDiff = sample2.y - sample1.y;
-        double tDiff = sample2.t - sample1.t;
+        // normalize the time features
+        features[zone * 3] += (sample2.t - sample1.t) / totalTime;
         
-        features[zone*3] += tDiff;
-        features[zone*3 + 1] += xDiff;
-        features[zone*3 + 2] += yDiff;
+        features[zone * 3 + 1] += sample2.x - sample1.x;
+        features[zone * 3 + 2] += sample2.y - sample1.y;
     }
-    
-    // normalize the time features
-    double totalTime = rescaledSamples[count-1].t - rescaledSamples[0].t;
-    for (int i = 0; i < 9; i++) {
-        features[i*3] = features[i*3]/totalTime;
-    }
-    
+
     features[27] = 1.0;
-    
     
     // -- TASK 1C --
 #if TRAINING
@@ -140,6 +137,7 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
     AppDelegate *delegate = [[UIApplication sharedApplication] delegate];
     [delegate appendTrainingLog:s];
 #endif
+    
     // -- TASK 1D --
     // The output of the training procedure goes at the top of GestureProcessor.m.
     
@@ -153,6 +151,7 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
         for (int j = 0; j <  N_FEATURES; j++) {
             score += features[j] * weights[i][j];
         }
+        
         if (score > bestScore) {
             bestLabel = i;
             bestScore = score;
