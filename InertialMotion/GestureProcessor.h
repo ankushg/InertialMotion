@@ -14,6 +14,14 @@ typedef struct {
     double x, y, t;
 } Sample2D;
 
+Sample2D Sample2DMake(double x, double y, double t) {
+    Sample2D sample;
+    sample.x = x;
+    sample.y = y;
+    sample.t = t;
+    return sample;
+}
+
 typedef struct {
     GLKVector3 location;
     GLKQuaternion attitude;

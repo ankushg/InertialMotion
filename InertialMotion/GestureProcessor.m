@@ -187,6 +187,10 @@ static NSString *const labels[N_LABELS+1] = {@"A", @"B", @"C", @"D", @"E", @"F",
     // For each i, form the matrix-vector product of M with samples[i].location
     // and copy the transformed x and y coordinates, along with the timestamp,
     // to samples2D[i].
+    for(int i = 0; i < count; i++) {
+        GLKVector3 projection = GLKMatrix3MultiplyVector3(M, samples[i].location);
+        samples2D[i] = Sample2DMake(projection.x, projection.y, samples[i].t);
+    }
     
     // Apply 2-D solution
     [self processGesture2DWithSamples:samples2D count:count minSize:minSize];
